@@ -7,7 +7,7 @@ TradeLens lets analysts quickly request and visualise trade flow data. Users sea
 
 ## Architecture
 
-![TradeLens stack](/docs/imgs/stack.jpeg)
+![TradeLens stack](/docs/imgs/stack.png)
 
 The MVP tool, built during the Hackathon, employed three services, two hosted on Azure.
 Trade flows database. An Azure SQL Database holds cleaned and transformed trade flow data, sourced from [NAME OF DATA SOURCE]. The database is populated by a data ingestion Python script. The annual release schedule of the source data means ingestion is infrequent.
