@@ -10,11 +10,12 @@ TradeLens lets analysts quickly request and visualise trade flow data. Users sea
 ![TradeLens stack](/docs/imgs/stack.png)
 
 The MVP tool, built during the Hackathon, employed three services, two hosted on Azure.
-Trade flows database. An Azure SQL Database holds cleaned and transformed trade flow data, sourced from [NAME OF DATA SOURCE]. The database is populated by a data ingestion Python script. The annual release schedule of the source data means ingestion is infrequent.
-Products vector database. A PineconeDB database holds embeddings for each HS item, and country name. This facilitates the semantic search of products and locations. This should be replaced by its Azure equivalent, Azure AI Search. 
-Web app. A FastAPI server via Azure’s Web App Service hosts two components:
-Frontend. Serves a basic UI for the querying and Vega-lite driven visualisation of trade data.
-Backend. Serves a simple API, which the frontend invokes to fetch data from the trade flows database.
+
+- Trade flows database. An Azure SQL Database holds cleaned and transformed trade flow data. The database is populated by a data ingestion Python script \[TODO: Migrate onto this repo\]. The annual release schedule of the source data means ingestion is infrequent.
+- Products vector database. A PineconeDB database holds embeddings for each HS item, and country name. This facilitates the semantic search of products and locations. This should be replaced by its Azure equivalent, Azure AI Search. 
+- Web app. A FastAPI server via Azure’s Web App Service hosts two components:
+- Frontend. Serves a basic UI for the querying and Vega-lite driven visualisation of trade data.
+- Backend. Serves a simple API, which the frontend invokes to fetch data from the trade flows database.
 
 ## User flow
 
