@@ -1,0 +1,6 @@
+creds.json
+__pycache__/
+.azure/
+.venv/
+.vscode/
+pinecone/

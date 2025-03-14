@@ -1,0 +1,108 @@
+        const eco_config = {
+            "background": "#122B39",
+            "legend": {
+                "title": {
+                    "color": "#b4c8d8",
+                    "fontSize": 12,
+                    "fontWeight": 400
+                },
+                "labelColor": "#b4c8d8",
+                "labelFontSize": 12,
+                "labelFontWeight": 400
+            },
+            "font": "Arial",
+            "title": {
+                "color": "#b4c8d8",
+                "subtitleColor": "#b4c8d8",
+                "subtitleFontSize": 12,
+                "subtitleFontWeight": 400,
+                "fontSize": 14,
+                "fontWeight": 400
+            },
+            "mark": {
+                "line": {
+                    "interpolate": "monotone"
+                }
+            },
+            "view": {
+                "stroke": "rgba(0,0,0, 0)",
+                "height": 300
+            },
+            "range": {
+                "category": [
+                    "#36B7B4",
+                    "#E6224B",
+                    "#F4C245",
+                    "#0063AF",
+                    "#00A767",
+                    "#179FDB",
+                    "#EB5C2E"
+                ],
+                "diverging": [
+                    "#E6224B",
+                    "#E54753",
+                    "#C9C9C9",
+                    "#179FDB",
+                    "#122B39"
+                ],
+                "heatmap": [
+                    "#C9C9C9",
+                    "#179FDB",
+                    "#0063AF",
+                    "#122B39"
+                ],
+                "ordinal": [
+                    "#00A767",
+                    "#36B7B4",
+                    "#179FDB",
+                    "#0063AF",
+                    "#243B5A"
+                ]
+            },
+            "axisX": {
+                "domainColor": "#b4c8d8",
+                "domainOpacity": 0.5,
+                "grid": false,
+                "labelAngle": 0,
+                "labelColor": "#b4c8d8",
+                "labelOpacity": 0.7,
+                "orient": "bottom",
+                "tickColor": "#b4c8d8",
+                "tickCount": 10,
+                "tickOpacity": 0.5,
+                "title": "",
+                "titleAlign": "center",
+                "titleAnchor": "middle",
+                "titleColor": "#b4c8d8",
+                "titleFontSize": 12,
+                "titleOpacity": 0.8,
+                "titleX": 207,
+                "titleY": -15
+            },
+            "axisY": {
+                "domainColor": "#b4c8d8",
+                "domainOpacity": 0.5,
+                "gridColor": "#b4c8d8",
+                "gridDash": [
+                    1,
+                    5
+                ],
+                "gridOpacity": 0.5,
+                "labelColor": "#b4c8d8",
+                "labelOpacity": 0.7,
+                "labelPadding": 5,
+                "tickColor": "#b4c8d8",
+                "tickCount": 8,
+                "tickOpacity": 0.5,
+                "ticks": false,
+                "title": "FAO price index",
+                "titleAlign": "left",
+                "titleAngle": 0,
+                "titleBaseline": "bottom",
+                "titleColor": "#b4c8d8",
+                "titleFontSize": 12,
+                "titleOpacity": 0.8,
+                "titleX": 0,
+                "titleY": -7
+            }
+        };
