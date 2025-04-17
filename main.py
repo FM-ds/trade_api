@@ -19,6 +19,7 @@ with open("creds.json", "r") as f:
     )
     DB_URL = creds["db"]
 
+engine = create_engine(DB_URL)
 
 product_codes_index = pc.Index("product-codes-index")
 country_index = pc.Index("country-codes-index")
@@ -46,7 +47,7 @@ def get_exports(
     with engine.connect() as conn:
         sql = f"""
         SELECT year, importer, {metric}
-        FROM trade_table
+        FROM BACI_trade_flows
         WHERE product_code = :product_code AND exporter = :exporter
         """
         params = {"product_code": product_code, "exporter": exporter}
@@ -84,7 +85,7 @@ def get_trade_totals(
     with engine.connect() as conn:
         sql = f"""
         SELECT year, SUM({metric}) AS total_{metric}
-        FROM trade_table
+        FROM BACI_trade_flows
         WHERE product_code = :product_code AND {column} = :country
         GROUP BY year
         ORDER BY year DESC
@@ -109,7 +110,7 @@ def get_top_trade(
     with engine.connect() as conn:
         sql = f"""
         SELECT product_code, SUM({metric}) AS total_{metric}
-        FROM trade_table
+        FROM BACI_trade_flows
         WHERE {column} = :country AND year = :year
         GROUP BY product_code
         ORDER BY total_{metric} DESC
@@ -144,10 +145,10 @@ def get_top_traders(
         # Step 1: Identify the top `num_countries` traders from the last year in the range
         sql_top_countries = f"""
         SELECT t.{column} AS trader, SUM(t.{metric}) AS total_{metric}, c.country_name, c.country_iso2, c.country_iso3
-        FROM trade_table t
+        FROM BACI_trade_flows t
         LEFT JOIN country_codes c ON t.{column} = c.country_code
         WHERE t.product_code = :product_code
-          AND t.year = (SELECT MAX(year) FROM trade_table WHERE product_code = :product_code)
+          AND t.year = (SELECT MAX(year) FROM BACI_trade_flows WHERE product_code = :product_code)
         """
         params = {"product_code": product_code}
 
@@ -171,7 +172,7 @@ def get_top_traders(
         # Step 2: Get time series data for the top traders over the full range
         sql_timeseries = f"""
         SELECT t.{column} AS trader, t.year, SUM(t.{metric}) AS total_{metric}, c.country_name, c.country_iso2, c.country_iso3
-        FROM trade_table t
+        FROM BACI_trade_flows t
         LEFT JOIN country_codes c ON t.{column} = c.country_code
         WHERE t.product_code = :product_code
           AND t.{column} IN :top_trader_ids
@@ -251,7 +252,7 @@ def get_top_countries(
     with engine.connect() as conn:
         sql = f"""
             SELECT t.*, c.country_name, c.country_iso2, c.country_iso3
-            FROM trade_table t
+            FROM BACI_trade_flows t
             LEFT JOIN country_codes c ON t.{trade_partner_col} = c.country_code
             WHERE 
                 t.year = :year AND 
@@ -292,7 +293,7 @@ def get_top_countries(
     with engine.connect() as conn:
         # sql = f"""
         #     SELECT t.*, c.country_name, c.country_iso2, c.country_iso3 
-        #     FROM trade_table t
+        #     FROM BACI_trade_flows t
         #     LEFT JOIN country_codes c ON t.importer = c.country_code
         #     WHERE 
         #         t.year BETWEEN :start_year AND :end_year AND
@@ -306,7 +307,7 @@ def get_top_countries(
                     t.*, 
                     exp.country_name AS exporter_name, exp.country_iso2 AS exporter_iso2, exp.country_iso3 AS exporter_iso3,
                     imp.country_name AS importer_name, imp.country_iso2 AS importer_iso2, imp.country_iso3 AS importer_iso3
-                FROM trade_table t
+                FROM BACI_trade_flows t
                 LEFT JOIN country_codes exp ON t.exporter = exp.country_code
                 LEFT JOIN country_codes imp ON t.importer = imp.country_code
                 WHERE 
@@ -324,6 +325,16 @@ def get_top_countries(
             "product_code": product_code,
             # "limit": limit
         }
+
+        # build the SQL statement for debugging
+        compiled_sql = sql
+        for key, value in params.items():
+            compiled_sql = compiled_sql.replace(f":{key}", str(value))
+        print("Compiled SQL:", compiled_sql)
+
+
+
+
         result = conn.execute(text(sql), params).mappings().all()
 
     return {"data": list(result)}
@@ -346,7 +357,7 @@ def partners_for_product_in_year(
                 c.country_name AS partner_name,
                 c.country_iso3 AS partner_iso3,
                 t.{metric} AS {metric}
-            FROM trade_table t
+            FROM BACI_trade_flows t
             LEFT JOIN country_codes c ON t.{trade_partner_col} = c.country_code
             WHERE 
                 t.year = :year AND
