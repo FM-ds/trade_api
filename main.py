@@ -387,7 +387,7 @@ def country_name_from_code(country_code: int):
             WHERE country_code = :country_code
         """
         params = {"country_code": country_code}
-        result = conn.execute(text(sql), params).first()
+        result = conn.execute(text(sql), params).mappings().all()[0]["country_name"]
     
     return result
 
@@ -400,6 +400,6 @@ def product_name_from_code(product_code: int):
             WHERE code = :product_code
         """
         params = {"product_code": product_code}
-        result = conn.execute(text(sql), params).first()
+        result = conn.execute(text(sql), params).mappings().all()[0]["description"]
     
     return result
