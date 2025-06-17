@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trade Flow Query</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    input, button { margin: 0.5rem; padding: 0.5rem; }
+    table { border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Trade Flow Query</h1>
+
+  <label>Exporter: <input type="number" id="exporter" placeholder="e.g. 840"></label>
+  <label>Importer: <input type="number" id="importer" placeholder="e.g. 124"></label>
+  <label>Product Code: <input type="number" id="product_code" placeholder="e.g. 100630"></label>
+  <button onclick="fetchTradeData()">Search</button>
+
+  <table id="results" style="display:none;">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Exporter</th>
+        <th>Importer</th>
+        <th>Product Code</th>
+        <th>Value ($)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function fetchTradeData() {
+      const exporter = document.getElementById('exporter').value;
+      const importer = document.getElementById('importer').value;
+      const product_code = document.getElementById('product_code').value;
+
+      let query = [];
+      if (exporter) query.push(`exporter=${exporter}`);
+      if (importer) query.push(`importer=${importer}`);
+      if (product_code) query.push(`product_code=${product_code}`);
+
+      const url = `http://127.0.0.1:8000/trade/?${query.join('&')}`;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("No data found");
+
+        const data = await response.json();
+        const table = document.getElementById('results');
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = '';
+
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row.id}</td>
+            <td>${row.exporter}</td>
+            <td>${row.importer}</td>
+            <td>${row.product_code}</td>
+            <td>${row.value.toFixed(2)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        table.style.display = 'table';
+      } catch (err) {
+        alert(err.message);
+        document.getElementById('results').style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>
