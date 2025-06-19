@@ -1,11 +1,12 @@
 from pydantic import BaseModel
 
 class TradeFlowOut(BaseModel):
-    id: int
+    year: int
     exporter: int
     importer: int
     product_code: int
     value: float
+    quantity: float
 
     class Config:
-        orm_mode = True
+        from_attributes = True

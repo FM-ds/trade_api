@@ -1,8 +1,9 @@
 from sqlalchemy import Column, Integer, String
-from app.database.database import Base
+# from app.database.database import Base
+from database.database import Base
 
 class Country(Base):
-    __tablename__ = "countries"
+    __tablename__ = "country_codes"
 
-    code = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
+    country_code = Column(Integer, primary_key=True, index=True)
+    country_name = Column(String(32), unique=True, index=True)

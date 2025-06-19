@@ -13,38 +13,63 @@
 <body>
   <h1>Trade Flow Query</h1>
 
-  <label>Exporter: <input type="number" id="exporter" placeholder="e.g. 840"></label>
-  <label>Importer: <input type="number" id="importer" placeholder="e.g. 124"></label>
-  <label>Product Code: <input type="number" id="product_code" placeholder="e.g. 100630"></label>
+  <label>Exporter: <input type="number" id="exporter" placeholder="e.g. 4"></label>
+  <label>Importer: <input type="number" id="importer" placeholder="e.g. 12"></label>
+  <label>Product Code: <input type="number" id="product_code" placeholder="e.g. 130120"></label>
+  <label>Year Start: <input type="number" id="year_start" placeholder="e.g. 2017"></label>
+  <!-- <label>Year End: <input type="number" id="year_start" placeholder="e.g. 2019"></label> -->
+
+
   <button onclick="fetchTradeData()">Search</button>
 
   <table id="results" style="display:none;">
     <thead>
       <tr>
-        <th>ID</th>
+        <th>Product Code</th>
+        <th>Year</th>
         <th>Exporter</th>
         <th>Importer</th>
-        <th>Product Code</th>
         <th>Value ($)</th>
+        <th>Quantity (kg Tonne)</th>
       </tr>
     </thead>
     <tbody></tbody>
-  </table>
+  </table> 
+
+  <h1>Country Code Query</h1>
+
+  <label>Country Code: <input type="number" id="country_code" placeholder="e.g. 4"></label>
+  <button onclick="fetchCountryCodeData()">Search</button>
+
+  <table id="country_code_results" style="display:none;">
+    <thead>
+      <tr>
+        <th>Country Code</th>
+        <th>Country Name</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table> 
 
   <script>
     async function fetchTradeData() {
       const exporter = document.getElementById('exporter').value;
       const importer = document.getElementById('importer').value;
       const product_code = document.getElementById('product_code').value;
+      const year_start = document.getElementById('year_start').value;
+      // const year_end = document.getElementById('year_end').value;
 
       let query = [];
       if (exporter) query.push(`exporter=${exporter}`);
       if (importer) query.push(`importer=${importer}`);
       if (product_code) query.push(`product_code=${product_code}`);
+      if (year_start) query.push(`year_start=${year_start}`);
+      // if (year_end) query.push(`year_end=${year_end}`);
 
       const url = `http://127.0.0.1:8000/trade/?${query.join('&')}`;
 
       try {
+        // fetch(url).then(data => console.log(data));
         const response = await fetch(url);
         if (!response.ok) throw new Error("No data found");
 
@@ -56,11 +81,12 @@
         data.forEach(row => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${row.id}</td>
+            <td>${row.product_code}</td>  
+            <td>${row.year}</td>
             <td>${row.exporter}</td>
             <td>${row.importer}</td>
-            <td>${row.product_code}</td>
             <td>${row.value.toFixed(2)}</td>
+            <td>${row.quantity.toFixed(2)}</td>
           `;
           tbody.appendChild(tr);
         });
@@ -71,6 +97,39 @@
         document.getElementById('results').style.display = 'none';
       }
     }
-  </script>
+  </script> 
+
+  <script>
+    async function fetchCountryCodeData() {
+      const country_code = document.getElementById('country_code').value;
+
+      let query = [];
+      if (country_code) query.push(`country_code=${country_code}`);
+
+      const url = `http://127.0.0.1:8000/countries/code/?${query.join('&')}`;
+
+      try {
+        // fetch(url).then(data => console.log(data));
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("No country code data found");
+
+        const data = await response.json();
+        const table = document.getElementById('country_code_results');
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = '';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${data.country_code}</td>
+          <td>${data.country_name}</td>
+        `;-
+        tbody.appendChild(tr);
+        table.style.display = 'table';
+      } catch (err) {
+        alert(err.message);
+        document.getElementById('results').style.display = 'none';
+      }
+    }
+  </script> 
 </body>
 </html>

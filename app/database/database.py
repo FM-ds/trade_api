@@ -13,7 +13,8 @@ with open("creds.json", "r") as f:
     )
     DB_URL = creds["db"]
 
-engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
+# engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
+engine = create_engine(DB_URL)
 
 product_codes_index = pc.Index("product-codes-index")
 country_index = pc.Index("country-codes-index")

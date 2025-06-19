@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 
 class CountryOut(BaseModel):
-    code: int
-    name: str
+    country_code: int
+    country_name: str
 
     class Config:
-        orm_mode=True
+        from_attributes=True
