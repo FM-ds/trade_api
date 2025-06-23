@@ -27,9 +27,9 @@ def filter_trade_flows(
     if product_code is not None:
         query = query.filter(TradeFlow.product_code == product_code)
     if year_start is not None:
-        query = query.filter(TradeFlow.year == year_start)
+        # query = query.filter(TradeFlow.year == year_start)
     # if year_start is not None:
-        # query = query.filter(TradeFlow.year >= year_start)
+        query = query.filter(TradeFlow.year >= year_start)
     # if year_start is not None and year_end is not None:
     #     query = query.filter(TradeFlow.year > year_start).filter(TradeFlow.year < year_end)
 
