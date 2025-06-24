@@ -123,19 +123,25 @@
     <h2> Top trade partners for a product</h2>
     <div class="container">
         <div id="top-partners-config" class="config-block">
-            <label>Year</label>
+            <!-- <label>Year</label>
             <input type="number" id="year" value="2021">
 
             <label>Country</label>
             <input type="number" id="country" value="398" onkeyup="fetchAutocomplete('country', 'top-partners-config')">
-            <!-- 826 is the code for the UK -->
             <div id="country-suggestions" class="suggestions"></div>
 
             <label>Product Code</label>
             <input type="text" id="product_code" value="284410"
                 onkeyup="fetchAutocomplete('product', 'top-partners-config')">
-            <!-- 010121 is the code for live horses -->
+            <div id="product-suggestions" class="suggestions"></div> -->
+
+            <label>Product</label>
+            <input type="text" id="product-input" placeholder="Start typing..." onkeyup="fetchAutocomplete('product', 'top-partners-config')">
             <div id="product-suggestions" class="suggestions"></div>
+
+            <label>Country</label>
+            <input type="text" id="country-input" placeholder="Start typing..." onkeyup="fetchAutocomplete('country')">
+            <div id="country-suggestions" class="suggestions"></div>
 
             <label>Trade Type</label>
             <div>
