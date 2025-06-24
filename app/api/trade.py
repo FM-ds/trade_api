@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.sql import func
 from typing import List, Optional
 # from app.database.database import get_db
 # from app.models.trade import TradeFlow
@@ -16,24 +17,63 @@ def filter_trade_flows(
     importer: Optional[int] = Query(None),
     product_code: Optional[int] = Query(None),
     year_start: Optional[int] = Query(None),
-    # year_end: Optional[int] = Query(None),
+    year_end: Optional[int] = Query(None),
     db: Session = Depends(get_db)
 ):
     query = db.query(TradeFlow)
+    # query = db.query(TradeFlow).options(joinedload(TradeFlow))
+
     if exporter is not None:
         query = query.filter(TradeFlow.exporter == exporter)
     if importer is not None:
         query = query.filter(TradeFlow.importer == importer)
     if product_code is not None:
         query = query.filter(TradeFlow.product_code == product_code)
-    if year_start is not None:
-        # query = query.filter(TradeFlow.year == year_start)
     # if year_start is not None:
-        query = query.filter(TradeFlow.year >= year_start)
+    #     query = query.filter(TradeFlow.year == year_start)
+    # if year_start is not None:
+        # query = query.filter(TradeFlow.year >= year_start)
+    if year_start is not None and year_end is not None:
+        query = query.filter(TradeFlow.year > year_start).filter(TradeFlow.year < year_end)
+
+
+    results = query.all()
+    if not results:
+        raise HTTPException(status_code=404, detail="No matching trade flows found")
+    return results
+
+@router.get("/trade_total/", response_model=List[TradeFlowOut])
+def total_trade_flows(
+    exporter: Optional[int] = Query(None),
+    product_code: Optional[int] = Query(None),
+    year_start: Optional[int] = Query(None),
+    year_end: Optional[int] = Query(None),
+    db: Session = Depends(get_db)
+):
+    # query = db.query(TradeFlow)
+    # query = db.query(TradeFlow).options(joinedload(TradeFlow))
+
+    # if exporter is not None:
+    #     query = query.filter(TradeFlow.exporter == exporter)
+    # if product_code is not None:
+    #     query = query.filter(TradeFlow.product_code == product_code)
     # if year_start is not None and year_end is not None:
     #     query = query.filter(TradeFlow.year > year_start).filter(TradeFlow.year < year_end)
 
-
+    # query = db.query(
+    #     func.sum(TradeFlow.value)
+    #     .filter(TradeFlow.exporter == exporter)
+    #     # .filter(TradeFlow.product_code == product_code)
+    #     # .filter(TradeFlow.year >= year_start)
+    #     # .filter(TradeFlow.year < year_end)
+    #     .label('sum_value')
+    #     )
+    query = (
+        db.query(func.sum(TradeFlow.value).label('sum_value'))
+        .filter(TradeFlow.exporter == exporter)
+        .filter(TradeFlow.year >= year_start)
+        .filter(TradeFlow.year < year_end)
+    )
     results = query.all()
     if not results:
         raise HTTPException(status_code=404, detail="No matching trade flows found")

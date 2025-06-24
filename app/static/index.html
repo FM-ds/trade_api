@@ -17,7 +17,7 @@
   <label>Importer: <input type="number" id="importer" placeholder="e.g. 826"></label>
   <label>Product Code: <input type="number" id="product_code" placeholder="e.g. 950300"></label>
   <label>Year Start: <input type="number" id="year_start" placeholder="e.g. 2017"></label>
-  <!-- <label>Year End: <input type="number" id="year_start" placeholder="e.g. 2019"></label> -->
+  <label>Year End: <input type="number" id="year_end" placeholder="e.g. 2019"></label>
 
 
   <button onclick="fetchTradeData()">Search</button>
@@ -31,6 +31,29 @@
         <th>Importer</th>
         <th>Value ($)</th>
         <th>Quantity (kg Tonne)</th>
+        <th>Retrieval time (seconds)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table> 
+
+  <h1>Trade Flow Totals</h1>
+
+  <label>Exporter: <input type="number" id="exporter_total" placeholder="e.g. 156"></label>
+  <label>Product Code: <input type="number" id="product_code_total" placeholder="e.g. 950300"></label>
+  <label>Year Start: <input type="number" id="year_start_total" placeholder="e.g. 2017"></label>
+  <label>Year End: <input type="number" id="year_end_total" placeholder="e.g. 2019"></label>
+
+  <button onclick="fetchTradeTotalsData()">Search</button>
+
+  <table id="results" style="display:none;">
+    <thead>
+      <tr>
+        <th>Product Code</th>
+        <th>Year</th>
+        <th>Exporter</th>
+        <th>Total Value ($)</th>
+        <th>Retrieval time (seconds)</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -46,6 +69,7 @@
       <tr>
         <th>Country Code</th>
         <th>Country Name</th>
+        <th>Country ISO2</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -57,20 +81,23 @@
       const importer = document.getElementById('importer').value;
       const product_code = document.getElementById('product_code').value;
       const year_start = document.getElementById('year_start').value;
-      // const year_end = document.getElementById('year_end').value;
+      const year_end = document.getElementById('year_end').value;
 
       let query = [];
       if (exporter) query.push(`exporter=${exporter}`);
       if (importer) query.push(`importer=${importer}`);
       if (product_code) query.push(`product_code=${product_code}`);
       if (year_start) query.push(`year_start=${year_start}`);
-      // if (year_end) query.push(`year_end=${year_end}`);
+      if (year_end) query.push(`year_end=${year_end}`);
 
       const url = `http://127.0.0.1:8000/trade/?${query.join('&')}`;
 
       try {
         // fetch(url).then(data => console.log(data));
+        let time1 = performance.now();
         const response = await fetch(url);
+        let time2 = performance.now();
+        let response_time = time2 - time1;
         if (!response.ok) throw new Error("No data found");
 
         const data = await response.json();
@@ -87,6 +114,7 @@
             <td>${row.importer}</td>
             <td>${row.value.toFixed(2)}</td>
             <td>${row.quantity.toFixed(2)}</td>
+            <td>${(response_time*0.001).toFixed(2)}</td>
           `;
           tbody.appendChild(tr);
         });
@@ -98,7 +126,53 @@
       }
     }
   </script> 
+  <script>
+    async function fetchTradeTotalsData() {
+      const exporter = document.getElementById('exporter_total').value;
+      const product_code = document.getElementById('product_code_total').value;
+      const year_start = document.getElementById('year_start_total').value;
+      const year_end = document.getElementById('year_end_total').value;
 
+      let query = [];
+      if (exporter) query.push(`exporter=${exporter}`);
+      if (product_code) query.push(`product_code=${product_code}`);
+      if (year_start) query.push(`year_start=${year_start}`);
+      if (year_end) query.push(`year_end=${year_end}`);
+
+      const url = `http://127.0.0.1:8000/trade/trade_total/?${query.join('&')}`;
+
+      try {
+        // fetch(url).then(data => console.log(data));
+        let time1 = performance.now();
+        const response = await fetch(url);
+        let time2 = performance.now();
+        let response_time = time2 - time1;
+        if (!response.ok) throw new Error("No data found");
+
+        const data = await response.json();
+        const table = document.getElementById('results');
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = '';
+
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row.product_code}</td>  
+            <td>${row.year}</td>
+            <td>${row.exporter}</td>
+            <td>${row.sum_value.toFixed(2)}</td>
+            <td>${(response_time*0.001).toFixed(2)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        table.style.display = 'table';
+      } catch (err) {
+        alert(err.message);
+        document.getElementById('results').style.display = 'none';
+      }
+    }
+  </script> 
   <script>
     async function fetchCountryCodeData() {
       const country_code = document.getElementById('country_code').value;
@@ -110,7 +184,10 @@
 
       try {
         // fetch(url).then(data => console.log(data));
+        let time1 = performance.now();
         const response = await fetch(url);
+        let time2 = performance.now();
+        let response_time = time2 - time1;
         if (!response.ok) throw new Error("No country code data found");
 
         const data = await response.json();
@@ -122,6 +199,7 @@
         tr.innerHTML = `
           <td>${data.country_code}</td>
           <td>${data.country_name}</td>
+          <td>${data.country_iso2}</td>
         `;-
         tbody.appendChild(tr);
         table.style.display = 'table';
