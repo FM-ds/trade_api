@@ -7,3 +7,4 @@ class Country(Base):
 
     country_code = Column(Integer, primary_key=True, index=True)
     country_name = Column(String(32), unique=True, index=True)
+    country_iso2 = Column(String(2),index=True)
