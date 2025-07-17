@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DuckDB Trade Query</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h2>Run a Trade Query</h2>
+
+    <h3>Query Options Overview</h3>
+<ul>
+    <li><strong>1. Simple (Exporter, Importer, Product, Year):</strong>
+        Returns raw trade rows for a specific exporter-importer-product combo over a year range.
+        <em>Tests point lookup and filtering performance.</em>
+    </li>
+    <li><strong>2. Grouped by Importer + Year:</strong>
+        Groups trade by importer and year for a specific exporter and product.
+        <em>Tests grouping and aggregation over time.</em>
+    </li>
+    <li><strong>3. Top Products by Exporter:</strong>
+        Shows total exports by product category for a single exporter across all years.
+        <em>Tests large-group summarisation and sorting.</em>
+    </li>
+    <li><strong>4. Total Exports by Importer:</strong>
+        Sums exports for an exporter by importer across a year range (all products).
+        <em>Tests summarisation and ordering by partner.</em>
+    </li>
+    <li><strong>5. Fastest Growing Export Pairs (2017–2022):</strong>
+        Finds importer-product pairs with the largest % growth in exports between 2017 and 2022, excluding low-volume starts (&lt;1000).
+        <em>Tests multi-step CTEs, pivoting, and percentage change calculations.</em>
+    </li>
+</ul>
+
+
+    <form method="post" action="/query">
+        <label>Query Type:</label>
+        <select name="query_type">
+            <option value="1" {% if form_data.query_type == "1" %}selected{% endif %}>1. Simple (Exporter, Importer, Product, Year)</option>
+            <option value="2" {% if form_data.query_type == "2" %}selected{% endif %}>2. Grouped by Importer + Year</option>
+            <option value="3" {% if form_data.query_type == "3" %}selected{% endif %}>3. Top Products by Exporter</option>
+            <option value="4" {% if form_data.query_type == "4" %}selected{% endif %}>4. Total Exports by Importer</option>
+            <option value="5" {% if form_data.query_type == "5" %}selected{% endif %}>5. Fastest Growing Export Pairs (2017–2022)</option>
+        </select><br><br>
+
+        <label>Exporter:</label>
+        <input type="number" name="exporter" required value="{{ form_data.exporter }}"><br>
+
+        <label>Importer (only for Query 1):</label>
+        <input type="number" name="importer" value="{{ form_data.importer }}"><br>
+
+        <label>Product:</label>
+        <input type="number" name="product" required value="{{ form_data.product }}"><br>
+
+        <label>Year From:</label>
+        <input type="number" name="year_from" required value="{{ form_data.year_from }}"><br>
+
+        <label>Year To:</label>
+        <input type="number" name="year_to" required value="{{ form_data.year_to }}"><br>
+
+        <button type="submit">Run Query</button>
+    </form>
+
+    {% if elapsed %}
+        <p><strong>DuckDB query time:</strong> {{ elapsed }}s</p>
+    {% endif %}
+
+    {% if table %}
+        <h3>Results</h3>
+        {{ table|safe }}
+    {% endif %}
+
+    <script>
+        const perfStart = performance.now();
+        window.addEventListener("load", () => {
+            const total = ((performance.now() - perfStart) / 1000).toFixed(3);
+            const resultDiv = document.createElement("p");
+            resultDiv.innerHTML = `<strong>Total page load time:</strong> ${total}s`;
+            document.body.appendChild(resultDiv);
+        });
+    </script>
+</body>
+</html>
