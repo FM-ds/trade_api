@@ -1,76 +1,372 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DuckDB Trade Query</title>
+    <title>DuckDB Trade Query with Tariff Data</title>
     <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .form-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .form-section h3 { margin-top: 0; color: #333; }
+        input, select, button { margin: 5px; padding: 8px; }
+        button { background-color: #0066cc; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background-color: #0052a3; }
+        .api-section { background-color: #f8f9fa; }
+        .tariff-section { background-color: #fff3cd; }
+        .results { margin-top: 20px; }
+        .tariff-results { background-color: #e8f4f8; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .search-box { width: 300px; }
+        .search-results { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; margin: 5px 0; }
+        .search-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .search-item:hover { background-color: #f0f0f0; }
+        .loading { color: #666; font-style: italic; }
+        .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 10px; margin: 10px 0; border-radius: 5px; }
+    </style>
 </head>
 <body>
-    <h2>Run a Trade Query</h2>
+    <h1>Trade Data Analysis with Tariff Information</h1>
 
-    <h3>Query Options Overview</h3>
-<ul>
-    <li><strong>1. Simple (Exporter, Importer, Product, Year):</strong>
-        Returns raw trade rows for a specific exporter-importer-product combo over a year range.
-        <em>Tests point lookup and filtering performance.</em>
-    </li>
-    <li><strong>2. Grouped by Importer + Year:</strong>
-        Groups trade by importer and year for a specific exporter and product.
-        <em>Tests grouping and aggregation over time.</em>
-    </li>
-    <li><strong>3. Top Products by Exporter:</strong>
-        Shows total exports by product category for a single exporter across all years.
-        <em>Tests large-group summarisation and sorting.</em>
-    </li>
-    <li><strong>4. Total Exports by Importer:</strong>
-        Sums exports for an exporter by importer across a year range (all products).
-        <em>Tests summarisation and ordering by partner.</em>
-    </li>
-    <li><strong>5. Fastest Growing Export Pairs (2017–2022):</strong>
-        Finds importer-product pairs with the largest % growth in exports between 2017 and 2022, excluding low-volume starts (&lt;1000).
-        <em>Tests multi-step CTEs, pivoting, and percentage change calculations.</em>
-    </li>
-</ul>
+    <!-- Original DuckDB Query Section -->
+    <div class="form-section">
+        <h2>DuckDB Trade Query</h2>
+        
+        <h3>Query Options Overview</h3>
+        <ul>
+            <li><strong>1. Simple (Exporter, Importer, Product, Year):</strong>
+                Returns raw trade rows for a specific exporter-importer-product combo over a year range.
+                <em>Tests point lookup and filtering performance.</em>
+            </li>
+            <li><strong>2. Grouped by Importer + Year:</strong>
+                Groups trade by importer and year for a specific exporter and product.
+                <em>Tests grouping and aggregation over time.</em>
+            </li>
+            <li><strong>3. Top Products by Exporter:</strong>
+                Shows total exports by product category for a single exporter across all years.
+                <em>Tests large-group summarisation and sorting.</em>
+            </li>
+            <li><strong>4. Total Exports by Importer:</strong>
+                Sums exports for an exporter by importer across a year range (all products).
+                <em>Tests summarisation and ordering by partner.</em>
+            </li>
+            <li><strong>5. Fastest Growing Export Pairs (2017–2022):</strong>
+                Finds importer-product pairs with the largest % growth in exports between 2017 and 2022, excluding low-volume starts (&lt;1000).
+                <em>Tests multi-step CTEs, pivoting, and percentage change calculations.</em>
+            </li>
+        </ul>
 
+        <form method="post" action="/query">
+            <label>Query Type:</label>
+            <select name="query_type">
+                <option value="1" {% if form_data.query_type == "1" %}selected{% endif %}>1. Simple (Exporter, Importer, Product, Year)</option>
+                <option value="2" {% if form_data.query_type == "2" %}selected{% endif %}>2. Grouped by Importer + Year</option>
+                <option value="3" {% if form_data.query_type == "3" %}selected{% endif %}>3. Top Products by Exporter</option>
+                <option value="4" {% if form_data.query_type == "4" %}selected{% endif %}>4. Total Exports by Importer</option>
+                <option value="5" {% if form_data.query_type == "5" %}selected{% endif %}>5. Fastest Growing Export Pairs (2017–2022)</option>
+            </select><br><br>
 
-    <form method="post" action="/query">
-        <label>Query Type:</label>
-        <select name="query_type">
-            <option value="1" {% if form_data.query_type == "1" %}selected{% endif %}>1. Simple (Exporter, Importer, Product, Year)</option>
-            <option value="2" {% if form_data.query_type == "2" %}selected{% endif %}>2. Grouped by Importer + Year</option>
-            <option value="3" {% if form_data.query_type == "3" %}selected{% endif %}>3. Top Products by Exporter</option>
-            <option value="4" {% if form_data.query_type == "4" %}selected{% endif %}>4. Total Exports by Importer</option>
-            <option value="5" {% if form_data.query_type == "5" %}selected{% endif %}>5. Fastest Growing Export Pairs (2017–2022)</option>
-        </select><br><br>
+            <label>Exporter:</label>
+            <input type="number" name="exporter" required value="{{ form_data.exporter }}"><br>
 
-        <label>Exporter:</label>
-        <input type="number" name="exporter" required value="{{ form_data.exporter }}"><br>
+            <label>Importer (only for Query 1):</label>
+            <input type="number" name="importer" value="{{ form_data.importer }}"><br>
 
-        <label>Importer (only for Query 1):</label>
-        <input type="number" name="importer" value="{{ form_data.importer }}"><br>
+            <label>Product:</label>
+            <input type="number" name="product" required value="{{ form_data.product }}"><br>
 
-        <label>Product:</label>
-        <input type="number" name="product" required value="{{ form_data.product }}"><br>
+            <label>Year From:</label>
+            <input type="number" name="year_from" required value="{{ form_data.year_from }}"><br>
 
-        <label>Year From:</label>
-        <input type="number" name="year_from" required value="{{ form_data.year_from }}"><br>
+            <label>Year To:</label>
+            <input type="number" name="year_to" required value="{{ form_data.year_to }}"><br>
 
-        <label>Year To:</label>
-        <input type="number" name="year_to" required value="{{ form_data.year_to }}"><br>
+            <button type="submit">Run Query</button>
+        </form>
+    </div>
 
-        <button type="submit">Run Query</button>
-    </form>
+    <!-- Separate Tariff Data Section -->
+    <div class="form-section tariff-section">
+        <h2>UK Tariff Data Lookup</h2>
+        <div class="warning">
+            <strong>Important:</strong> UK Tariff codes are different from trade statistics codes. 
+            Tariff codes are 10-digit UK commodity codes (e.g., 9503007000 for specific toys).
+            You can search for tariff commodities or browse by sections/chapters.
+        </div>
+        
+        <!-- Tariff Browse Section -->
+        <div style="margin-bottom: 20px;">
+            <h3>Browse Tariff Structure</h3>
+            <button type="button" onclick="loadTariffSections()">Load Tariff Sections</button>
+            <div id="tariff-sections" style="display: none; margin: 10px 0;"></div>
+            
+            <div id="tariff-chapters" style="display: none; margin: 10px 0;"></div>
+        </div>
 
-    {% if elapsed %}
-        <p><strong>DuckDB query time:</strong> {{ elapsed }}s</p>
-    {% endif %}
+        <!-- Tariff Search Section -->
+        <div style="margin-bottom: 20px;">
+            <h3>Search Tariff Commodities</h3>
+            <label>Search by description:</label>
+            <input type="text" id="tariff_search" placeholder="Enter commodity name (e.g., toys, coffee)" class="search-box">
+            <button type="button" onclick="searchTariffCommodities()">Search Tariff Data</button>
+            <div id="tariff-search-results" class="search-results" style="display: none;"></div>
+        </div>
 
-    {% if table %}
-        <h3>Results</h3>
-        {{ table|safe }}
-    {% endif %}
+        <!-- Tariff Details Section -->
+        <div>
+            <h3>Get Detailed Tariff Information</h3>
+            <label>UK Commodity Code (10 digits):</label>
+            <input type="text" id="commodity_code" placeholder="e.g., 9503007000" class="search-box">
+            <button type="button" onclick="getCommodityDetails()">Get Tariff Details</button>
+            
+            <div style="margin-top: 10px;">
+                <label>Optional filters:</label><br>
+                <label>Country code:</label>
+                <input type="text" id="country_filter" placeholder="e.g., US, CN" style="width: 100px;">
+                <label>Date (YYYY-MM-DD):</label>
+                <input type="date" id="date_filter">
+            </div>
+        </div>
+
+        <!-- Cache Management Section -->
+        <div style="margin-top: 20px;">
+            <h3>Cache Management</h3>
+            <div class="info">
+                <strong>Note:</strong> API responses are cached for 24 hours to reduce server load and improve performance.
+            </div>
+            <button type="button" onclick="getCacheStats()">Get Cache Stats</button>
+            <button type="button" onclick="clearCache()">Clear Cache</button>
+            <div id="cache-info" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results">
+        {% if elapsed %}
+            <p><strong>DuckDB query time:</strong> {{ elapsed }}s</p>
+        {% endif %}
+
+        {% if table %}
+            <h3>DuckDB Query Results</h3>
+            {{ table|safe }}
+        {% endif %}
+
+        <div id="tariff-results" style="display: none;">
+            <h3>UK Tariff Data Results</h3>
+            <div id="tariff-results-content"></div>
+        </div>
+    </div>
 
     <script>
         const perfStart = performance.now();
+        
+        // Tariff data functions
+        async function loadTariffSections() {
+            const sectionsDiv = document.getElementById('tariff-sections');
+            sectionsDiv.innerHTML = '<div class="loading">Loading tariff sections...</div>';
+            sectionsDiv.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/tariff/sections');
+                const sections = await response.json();
+                
+                sectionsDiv.innerHTML = `
+                    <h4>Tariff Sections</h4>
+                    <select id="section-select" onchange="loadTariffChapters(this.value)">
+                        <option value="">Select a section...</option>
+                        ${sections.map(s => `<option value="${s.id}">${s.position}. ${s.title}</option>`).join('')}
+                    </select>
+                `;
+            } catch (error) {
+                sectionsDiv.innerHTML = `<div style="color: red;">Error loading sections: ${error.message}</div>`;
+            }
+        }
+
+        async function loadTariffChapters(sectionId) {
+            if (!sectionId) return;
+            
+            const chaptersDiv = document.getElementById('tariff-chapters');
+            chaptersDiv.innerHTML = '<div class="loading">Loading chapters...</div>';
+            chaptersDiv.style.display = 'block';
+
+            try {
+                const response = await fetch(`/api/tariff/chapters?section_id=${sectionId}`);
+                const chapters = await response.json();
+                
+                chaptersDiv.innerHTML = `
+                    <h4>Chapters in Selected Section</h4>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        ${chapters.map(c => `
+                            <div class="search-item" onclick="selectTariffChapter('${c.goods_nomenclature_item_id}')">
+                                ${c.goods_nomenclature_item_id} - ${c.description}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                chaptersDiv.innerHTML = `<div style="color: red;">Error loading chapters: ${error.message}</div>`;
+            }
+        }
+
+        async function searchTariffCommodities() {
+            const search = document.getElementById('tariff_search').value;
+            const resultsDiv = document.getElementById('tariff-search-results');
+            
+            if (!search || search.length < 2) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            
+            resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
+            resultsDiv.style.display = 'block';
+            
+            try {
+                const response = await fetch(`/api/tariff/search?query=${encodeURIComponent(search)}`);
+                const commodities = await response.json();
+                
+                resultsDiv.innerHTML = commodities.map(c => 
+                    `<div class="search-item" onclick="selectTariffCommodity('${c.goods_nomenclature_item_id}', '${c.description}')">${c.goods_nomenclature_item_id} - ${c.description}</div>`
+                ).join('');
+                
+                if (commodities.length === 0) {
+                    resultsDiv.innerHTML = '<div>No commodities found. Try different search terms.</div>';
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div style="color: red;">Error searching: ${error.message}</div>`;
+            }
+        }
+
+        // Selection functions
+        function selectTariffChapter(code) {
+            // For chapters, we need to add zeros to make it 10 digits
+            const paddedCode = code.padEnd(10, '0');
+            document.getElementById('commodity_code').value = paddedCode;
+        }
+
+        function selectTariffCommodity(code, description) {
+            document.getElementById('commodity_code').value = code;
+            document.getElementById('tariff-search-results').style.display = 'none';
+        }
+
+        async function getCommodityDetails() {
+            const code = document.getElementById('commodity_code').value;
+            const country = document.getElementById('country_filter').value;
+            const date = document.getElementById('date_filter').value;
+            
+            if (!code) {
+                alert('Please enter a commodity code');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('tariff-results');
+            const contentDiv = document.getElementById('tariff-results-content');
+            
+            contentDiv.innerHTML = '<div class="loading">Loading tariff data...</div>';
+            resultsDiv.style.display = 'block';
+
+            try {
+                let url = `/api/tariff/commodities/${code}`;
+                const params = new URLSearchParams();
+                if (country) params.append('country', country);
+                if (date) params.append('as_of', date);
+                if (params.toString()) url += '?' + params.toString();
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                contentDiv.innerHTML = `
+                    <div class="tariff-results">
+                        <h4>${data.commodity.description}</h4>
+                        <p><strong>Code:</strong> ${data.commodity.goods_nomenclature_item_id}</p>
+                        <p><strong>Class:</strong> ${data.commodity.goods_nomenclature_class}</p>
+                        <p><strong>Execution Time:</strong> ${data.execution_time_ms}ms</p>
+                        
+                        <h5>Measures (${data.measures.length} total):</h5>
+                        ${data.measures.length > 0 ? `
+                            <table border="1" style="border-collapse: collapse; width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th>Measure Type</th>
+                                        <th>Duty Expression</th>
+                                        <th>Geographical Area</th>
+                                        <th>Effective Dates</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.measures.map(measure => `
+                                        <tr>
+                                            <td>${measure.measure_type}</td>
+                                            <td>${measure.duty_expression}</td>
+                                            <td>${measure.geographical_area}</td>
+                                            <td>${measure.effective_start_date} - ${measure.effective_end_date || 'Ongoing'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<p>No measures found for this commodity.</p>'}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error fetching commodity details:', error);
+                contentDiv.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Cache management functions
+        async function getCacheStats() {
+            try {
+                const response = await fetch('/api/tariff/cache/stats');
+                const stats = await response.json();
+                
+                document.getElementById('cache-info').innerHTML = `
+                    <div style="background-color: #f0f0f0; padding: 10px; border-radius: 5px;">
+                        <strong>Cache Statistics:</strong><br>
+                        Total entries: ${stats.total_entries}<br>
+                        Valid entries: ${stats.valid_entries}<br>
+                        Expired entries: ${stats.expired_entries}<br>
+                        Cache duration: ${stats.cache_duration_hours} hours
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('cache-info').innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function clearCache() {
+            try {
+                const response = await fetch('/api/tariff/cache/clear', { method: 'POST' });
+                const result = await response.json();
+                
+                document.getElementById('cache-info').innerHTML = `<div style="color: green;">${result.message}</div>`;
+                
+                // Refresh cache stats
+                setTimeout(getCacheStats, 1000);
+            } catch (error) {
+                document.getElementById('cache-info').innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Hide search results when clicking outside
+        document.addEventListener('click', function(event) {
+            const searchBoxes = [
+                'tariff-search-results'
+            ];
+            
+            searchBoxes.forEach(id => {
+                const element = document.getElementById(id);
+                if (element && !element.contains(event.target)) {
+                    const associatedInput = document.querySelector(`input[id*="${id.split('-')[0]}"]`);
+                    if (associatedInput && !associatedInput.contains(event.target)) {
+                        element.style.display = 'none';
+                    }
+                }
+            });
+        });
+
         window.addEventListener("load", () => {
             const total = ((performance.now() - perfStart) / 1000).toFixed(3);
             const resultDiv = document.createElement("p");
