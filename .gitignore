@@ -5,4 +5,4 @@ __pycache__/
 .vscode/
 pinecone/
 trade_api_env/
-.parquet
+*.parquet
